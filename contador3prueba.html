@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Squid Game Counter</title>
+<style>
+  /* --- FONDO --- */
+  body {
+    margin: 0;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #00ff66;
+    font-family: 'Courier New', monospace;
+    background: radial-gradient(circle at center, #001100 0%, #000000 70%) fixed;
+    position: relative;
+  }
+
+  /* Neblina animada */
+  body::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(circle at 30% 30%, rgba(0,255,100,0.08) 0%, transparent 70%),
+      radial-gradient(circle at 70% 70%, rgba(0,255,150,0.05) 0%, transparent 80%),
+      linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,1));
+    animation: fogMove 20s ease-in-out infinite alternate;
+    z-index: 0;
+  }
+
+  @keyframes fogMove {
+    from { transform: translate(0px, 0px) scale(1); }
+    to { transform: translate(30px, -20px) scale(1.1); }
+  }
+
+  /* Líneas verdes sutiles */
+  body::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0, 255, 0, 0.02) 0px,
+      rgba(0, 255, 0, 0.02) 2px,
+      transparent 3px,
+      transparent 5px
+    );
+    z-index: 0;
+  }
+
+  /* --- CONTADOR --- */
+  .counter {
+    font-size: 180px;
+    text-shadow: 0 0 25px #00ff66, 0 0 60px #00ff33;
+    user-select: none;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* --- PANEL DE CONFIGURACIÓN --- */
+  .config {
+    position: absolute;
+    top: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 1px solid #00ff66;
+    border-radius: 10px;
+    padding: 10px 20px;
+    color: #00ff66;
+    font-size: 16px;
+    transition: opacity 0.3s ease;
+    z-index: 2;
+  }
+
+  .config label {
+    margin-right: 5px;
+  }
+
+  .config input[type="number"] {
+    background-color: black;
+    border: 1px solid #00ff66;
+    color: #00ff66;
+    width: 70px;
+    text-align: center;
+    margin-right: 10px;
+  }
+
+  .config input[type="range"] {
+    accent-color: #00ff66;
+    width: 150px;
+    margin-right: 10px;
+  }
+
+  .config button {
+    background-color: #00ff66;
+    color: black;
+    font-weight: bold;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-right: 5px;
+  }
+
+  .config button:hover {
+    background-color: #00ff99;
+  }
+
+  /* --- BOTÓN DE PANTALLA COMPLETA --- */
+  .fullscreen {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background-color: #00ff66;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    border: none;
+    cursor: pointer;
+    z-index: 2;
+  }
+
+  .fullscreen:hover {
+    background-color: #00ff99;
+  }
+</style>
+</head>
+<body>
+  <div class="config" id="config">
+    <label>Inicio:</label>
+    <input id="start" type="number" value="456">
+    <label>Final:</label>
+    <input id="end" type="number" value="287">
+    <label>Velocidad:</label>
+    <input id="speed" type="range" min="100" max="2000" value="1000">
+    <span id="speedLabel">1000 ms</span>
+    <label>Espera(s):</label>
+    <input id="delay" type="number" value="5">
+    <button id="startBtn">Iniciar</button>
+    <button id="pauseBtn">Pausar</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+
+  <div class="counter" id="counter">456</div>
+  <button class="fullscreen" id="fullscreenBtn"></button>
+
+<script>
+  const counter = document.getElementById('counter');
+  const speedInput = document.getElementById('speed');
+  const speedLabel = document.getElementById('speedLabel');
+  const config = document.getElementById('config');
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+  let startValue = 456;
+  let endValue = 287;
+  let speed = parseInt(speedInput.value);
+  let delay = 5;
+  let current = startValue;
+  let interval = null;
+  let paused = false;
+
+  speedInput.addEventListener('input', () => {
+    speed = parseInt(speedInput.value);
+    speedLabel.textContent = `${speed} ms`;
+    if (interval) {
+      clearInterval(interval);
+      interval = setInterval(updateCounter, speed);
+    }
+  });
+
+  function updateCounter() {
+    if (paused) return;
+    if (current <= endValue) {
+      clearInterval(interval);
+      interval = null;
+      return;
+    }
+    current--;
+    counter.textContent = current;
+  }
+
+  function startCounter() {
+    clearInterval(interval);
+    startValue = parseInt(document.getElementById('start').value);
+    endValue = parseInt(document.getElementById('end').value);
+    delay = parseInt(document.getElementById('delay').value);
+    speed = parseInt(speedInput.value);
+    current = startValue;
+    counter.textContent = current;
+    paused = false;
+    setTimeout(() => {
+      interval = setInterval(updateCounter, speed);
+    }, delay * 1000);
+  }
+
+  function pauseCounter() {
+    paused = !paused;
+    document.getElementById('pauseBtn').textContent = paused ? 'Reanudar' : 'Pausar';
+  }
+
+  function resetCounter() {
+    clearInterval(interval);
+    interval = null;
+    paused = false;
+    document.getElementById('pauseBtn').textContent = 'Pausar';
+    current = parseInt(document.getElementById('start').value);
+    counter.textContent = current;
+  }
+
+  document.getElementById('startBtn').addEventListener('click', startCounter);
+  document.getElementById('pauseBtn').addEventListener('click', pauseCounter);
+  document.getElementById('resetBtn').addEventListener('click', resetCounter);
+
+  fullscreenBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      config.style.opacity = 0;
+      setTimeout(() => (config.style.display = "none"), 300);
+    } else {
+      document.exitFullscreen();
+    }
+  });
+
+  document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement) {
+      config.style.display = "block";
+      setTimeout(() => (config.style.opacity = 1), 50);
+    }
+  });
+</script>
+</body>
+</html>
